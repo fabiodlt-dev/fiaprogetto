@@ -6,7 +6,8 @@ dataset = pd.read_csv("season-2425.csv")
 # Imposta opzioni di visualizzazione
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns", None)
-asdfasdfsdf
+
+
 # Creazione del DataFrame
 df = pd.DataFrame(dataset)
 
