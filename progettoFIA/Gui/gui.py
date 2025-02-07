@@ -1,65 +1,84 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from Model.model import train_model, predict_outcome
 
-# Addestramento del modello
-model, le, accuracy = train_model()
+class BettingApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Previsione Partite Calcio")
+        self.root.geometry("500x400")
+        self.root.configure(bg="#2E4053")
 
-# Funzione per aggiungere le partite e ottenere le previsioni
-def add_match():
-    home_team = entry_home_team.get()
-    away_team = entry_away_team.get()
+        # Caricamento del modello
+        self.model, self.le, self.accuracy = train_model()
+        self.squadre = sorted(self.le.classes_)
 
-    if home_team and away_team:
-        predicted_outcome = predict_outcome(model, le, home_team, away_team)
-        if predicted_outcome:
-            result_text = f'{home_team} vs {away_team}: {predicted_outcome}'
-            listbox_results.insert(tk.END, result_text)
+        # Creazione interfaccia grafica
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Titolo
+        title_label = tk.Label(self.root, text="Previsione Risultati Partite", font=("Arial", 16), bg="#2E4053", fg="white")
+        title_label.pack(pady=10)
+
+        # Selezione Squadre
+        self.frame = tk.Frame(self.root, bg="#2E4053")
+        self.frame.pack(pady=5)
+
+        self.home_var = tk.StringVar()
+        self.away_var = tk.StringVar()
+
+        self.home_menu = ttk.Combobox(self.frame, textvariable=self.home_var, values=self.squadre, width=20)
+        self.home_menu.grid(row=0, column=0, padx=5, pady=5)
+
+        self.away_menu = ttk.Combobox(self.frame, textvariable=self.away_var, values=self.squadre, width=20)
+        self.away_menu.grid(row=0, column=1, padx=5, pady=5)
+
+        # Bottone per aggiungere partita
+        self.add_button = tk.Button(self.frame, text="Prevedi", command=self.add_match, bg="#28B463", fg="white")
+        self.add_button.grid(row=0, column=2, padx=5, pady=5)
+
+        # Lista risultati
+        self.listbox_results = tk.Listbox(self.root, width=50, height=10)
+        self.listbox_results.pack(pady=10)
+
+        # Bottoni inferiori
+        self.button_accuracy = tk.Button(self.root, text="Mostra Accuratezza", command=self.show_accuracy, bg="#D4AC0D", fg="black")
+        self.button_accuracy.pack(pady=5)
+
+        self.button_clear = tk.Button(self.root, text="Pulisci Partite", command=self.clear_matches, bg="#E74C3C", fg="white")
+        self.button_clear.pack(pady=5)
+
+    def add_match(self):
+        """Aggiunge la partita alla lista e calcola la previsione."""
+        home_team = self.home_var.get()
+        away_team = self.away_var.get()
+
+        if home_team and away_team and home_team != away_team:
+            predicted_outcome = predict_outcome(self.model, self.le, home_team, away_team)
+            if predicted_outcome:
+                result_text = f'{home_team} vs {away_team}: {predicted_outcome}'
+                self.listbox_results.insert(tk.END, result_text)
+            else:
+                messagebox.showerror("Errore", "Impossibile ottenere la previsione.")
         else:
-            messagebox.showerror("Errore", "Impossibile ottenere la previsione.")
-    else:
-        messagebox.showwarning("Campo vuoto", "Inserisci entrambe le squadre.")
+            messagebox.showwarning("Attenzione", "Seleziona due squadre diverse.")
 
-# Funzione per ottenere l'accuratezza
-def show_accuracy():
-    messagebox.showinfo("Accuratezza del Modello", f"L'accuratezza del modello è: {accuracy * 100:.2f}%")
+    def show_accuracy(self):
+        """Mostra l'accuratezza del modello in una finestra di dialogo."""
+        messagebox.showinfo("Accuratezza del Modello", f"L'accuratezza del modello è: {self.accuracy * 100:.2f}%")
 
-# Funzione per rimuovere tutte le partite dalla lista
-def clear_matches():
-    listbox_results.delete(0, tk.END)
+    def clear_matches(self):
+        """Rimuove tutte le partite dalla lista."""
+        self.listbox_results.delete(0, tk.END)
 
-# Creazione della finestra principale
-root = tk.Tk()
-root.title("Previsione Partite Calcio")
+# Funzione per creare la GUI e restituire l'oggetto root
+def create_gui():
+    root = tk.Tk()
+    app = BettingApp(root)
+    return root
 
-# Etichette e campi di inserimento
-label_home_team = tk.Label(root, text="Squadra di Casa:")
-label_home_team.pack(pady=5)
-
-entry_home_team = tk.Entry(root)
-entry_home_team.pack(pady=5)
-
-label_away_team = tk.Label(root, text="Squadra Ospite:")
-label_away_team.pack(pady=5)
-
-entry_away_team = tk.Entry(root)
-entry_away_team.pack(pady=5)
-
-# Bottone per aggiungere la partita
-button_add_match = tk.Button(root, text="Aggiungi Partita", command=add_match)
-button_add_match.pack(pady=5)
-
-# Lista per visualizzare i risultati delle partite
-listbox_results = tk.Listbox(root, width=50, height=10)
-listbox_results.pack(pady=10)
-
-# Bottone per mostrare l'accuratezza
-button_accuracy = tk.Button(root, text="Mostra Accuratezza", command=show_accuracy)
-button_accuracy.pack(pady=5)
-
-# Bottone per cancellare tutte le partite
-button_clear = tk.Button(root, text="Pulisci Partite", command=clear_matches)
-button_clear.pack(pady=5)
-
-# Avvio della finestra
-root.mainloop()
+# Se viene eseguito direttamente, avvia la GUI
+if __name__ == "__main__":
+    root = create_gui()
+    root.mainloop()
