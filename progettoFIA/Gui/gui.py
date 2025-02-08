@@ -10,18 +10,17 @@ class BettingApp:
         self.root.configure(bg="#2E4053")
 
         # Caricamento del modello
-        self.model, self.le, self.accuracy = train_model()
+        self.model, self.le, self.accuracy, self.team_stats, self.direct_comparisons = train_model()
+
         self.squadre = sorted(self.le.classes_)
 
         # Creazione interfaccia grafica
         self.create_widgets()
 
     def create_widgets(self):
-        # Titolo
         title_label = tk.Label(self.root, text="Previsione Risultati Partite", font=("Arial", 16), bg="#2E4053", fg="white")
         title_label.pack(pady=10)
 
-        # Selezione Squadre
         self.frame = tk.Frame(self.root, bg="#2E4053")
         self.frame.pack(pady=5)
 
@@ -34,15 +33,12 @@ class BettingApp:
         self.away_menu = ttk.Combobox(self.frame, textvariable=self.away_var, values=self.squadre, width=20)
         self.away_menu.grid(row=0, column=1, padx=5, pady=5)
 
-        # Bottone per aggiungere partita
         self.add_button = tk.Button(self.frame, text="Prevedi", command=self.add_match, bg="#28B463", fg="white")
         self.add_button.grid(row=0, column=2, padx=5, pady=5)
 
-        # Lista risultati
         self.listbox_results = tk.Listbox(self.root, width=50, height=10)
         self.listbox_results.pack(pady=10)
 
-        # Bottoni inferiori
         self.button_accuracy = tk.Button(self.root, text="Mostra Accuratezza", command=self.show_accuracy, bg="#D4AC0D", fg="black")
         self.button_accuracy.pack(pady=5)
 
@@ -50,12 +46,12 @@ class BettingApp:
         self.button_clear.pack(pady=5)
 
     def add_match(self):
-        """Aggiunge la partita alla lista e calcola la previsione."""
         home_team = self.home_var.get()
         away_team = self.away_var.get()
 
         if home_team and away_team and home_team != away_team:
-            predicted_outcome = predict_outcome(self.model, self.le, home_team, away_team)
+            predicted_outcome = predict_outcome(self.model, self.le, home_team, away_team, self.team_stats, self.direct_comparisons)
+
             if predicted_outcome:
                 result_text = f'{home_team} vs {away_team}: {predicted_outcome}'
                 self.listbox_results.insert(tk.END, result_text)
@@ -65,20 +61,16 @@ class BettingApp:
             messagebox.showwarning("Attenzione", "Seleziona due squadre diverse.")
 
     def show_accuracy(self):
-        """Mostra l'accuratezza del modello in una finestra di dialogo."""
         messagebox.showinfo("Accuratezza del Modello", f"L'accuratezza del modello è: {self.accuracy * 100:.2f}%")
 
     def clear_matches(self):
-        """Rimuove tutte le partite dalla lista."""
         self.listbox_results.delete(0, tk.END)
 
-# Funzione per creare la GUI e restituire l'oggetto root
 def create_gui():
     root = tk.Tk()
     app = BettingApp(root)
     return root
 
-# Se viene eseguito direttamente, avvia la GUI
 if __name__ == "__main__":
     root = create_gui()
     root.mainloop()
