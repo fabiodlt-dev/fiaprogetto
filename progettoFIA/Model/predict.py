@@ -1,47 +1,50 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import accuracy_score
-from data_processing import load_season_data, compute_team_stats
-from feature_engineering import extract_features
 
-def train_model():
-    """Carica i dati, addestra il modello e calcola l'accuratezza."""
-    past_seasons = [
+def predict_probabilities(model, le, home_team, away_team):
+    try:
+        home_encoded = le.transform([home_team])[0]
+        away_encoded = le.transform([away_team])[0]
+    except ValueError:
+        print(" Errore: Una delle squadre inserite non è presente nei dati.")
+        return None
 
-        load_season_data("datasetsMatch/season-2021.csv"),
-        load_season_data("datasetsMatch/season-2122.csv"),
-        load_season_data("datasetsMatch/season-2223.csv"),
-        load_season_data("datasetsMatch/season-2324.csv")
-    ]
-    current_season = load_season_data("datasetsMatch/season-2425.csv")
+    # Creiamo un DataFrame con le stesse colonne di X_train
+    new_match = pd.DataFrame([[home_encoded, away_encoded, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                             columns=['HomeTeam', 'AwayTeam', 'HomeGoalsLast5', 'AwayGoalsLast5',
+                                      'HomeGoalsConcededLast5',
+                                      'AwayGoalsConcededLast5', 'HomeGoalDifferenceLast5', 'AwayGoalDifferenceLast5',
+                                      'HomeTeamPoints', 'AwayTeamPoints', 'home_goals_scored', 'home_goals_conceded',
+                                      'away_goals_scored', 'away_goals_conceded', 'HomeWinsAgainstAwayTeam',
+                                      'AwayWinsAgainstHomeTeam', 'DrawsAgainstEachOther'])
 
-    past_data = pd.concat(past_seasons, ignore_index=True)
-    team_stats, direct_comparisons = compute_team_stats(past_data)
+    probabilities = model.predict_proba(new_match)[0]
+    result_mapping = {0: "Home Win", 1: "Draw", 2: "Away Win"}
 
-    current_season = extract_features(current_season, team_stats, direct_comparisons)
+    return {result_mapping[i]: round(probabilities[i] * 100, 2) for i in range(3)}
 
-    le = LabelEncoder()
-    all_teams = pd.concat([current_season['HomeTeam'], current_season['AwayTeam']]).unique()
-    le.fit(all_teams)
-    current_season['HomeTeam'] = le.transform(current_season['HomeTeam'])
-    current_season['AwayTeam'] = le.transform(current_season['AwayTeam'])
+# Esempio di utilizzo
+if __name__ == "__main__":
+    from data_processing import load_and_preprocess_data
+    from feature_engineering import add_features
+    from model import train_model
 
-    current_season['Result'] = current_season['FTR'].map({'H': 0, 'D': 1, 'A': 2})
-    current_season = current_season.drop(columns=['FTR', 'Date'])
+    # Caricare e preprocessare i dati
+    dataset, le = load_and_preprocess_data()
 
-    X = current_season[['HomeTeam', 'AwayTeam', 'HomeRank', 'AwayRank', 'HomeGF', 'AwayGF', 'HomeGA', 'AwayGA', 'HomeForm', 'AwayForm', 'HomeWins', 'AwayWins', 'Draws']]
-    y = current_season['Result']
+    # Aggiungere feature
+    dataset = add_features(dataset)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Addestrare il modello
+    model = train_model(dataset)
 
-    model = RandomForestClassifier(n_estimators=300, max_depth=15, random_state=42)
-    calibrated_model = CalibratedClassifierCV(model, method='sigmoid')
-    calibrated_model.fit(X_train, y_train)
+    # Input dell'utente
+    home_team = input("Inserisci la squadra di casa: ")
+    away_team = input("Inserisci la squadra ospite: ")
 
-    y_pred = calibrated_model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
+    # Previsione delle probabilità
+    probabilities = predict_probabilities(model, le, home_team, away_team)
 
-    return calibrated_model, le, accuracy, team_stats, direct_comparisons
+    if probabilities:
+        print(f' Probabilità per {home_team} vs {away_team}:')
+        for outcome, probability in probabilities.items():
+            print(f' {outcome}: {probability}%')
