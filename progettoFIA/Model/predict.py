@@ -1,5 +1,4 @@
 import pandas as pd
-
 def predict_probabilities(model, le, home_team, away_team):
     try:
         home_encoded = le.transform([home_team])[0]
@@ -48,3 +47,5 @@ if __name__ == "__main__":
         print(f' Probabilità per {home_team} vs {away_team}:')
         for outcome, probability in probabilities.items():
             print(f' {outcome}: {probability}%')
+
+

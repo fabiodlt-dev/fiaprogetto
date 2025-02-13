@@ -4,11 +4,11 @@ from sklearn.preprocessing import LabelEncoder
 def load_and_preprocess_data():
     # Caricare i dataset delle stagioni
     datasets = [
-        pd.read_csv("../datasetsMatch/season-2425.csv"),
-        pd.read_csv("../datasetsMatch/season-2324.csv"),
-        pd.read_csv("../datasetsMatch/season-2223.csv"),
+        pd.read_csv("../datasetsMatch/season-2021.csv"),
         pd.read_csv("../datasetsMatch/season-2122.csv"),
-        pd.read_csv("../datasetsMatch/season-2021.csv")
+        pd.read_csv("../datasetsMatch/season-2223.csv"),
+        pd.read_csv("../datasetsMatch/season-2324.csv"),
+        pd.read_csv("../datasetsMatch/season-2425.csv")
     ]
 
     # Unire tutti i dataset in uno solo

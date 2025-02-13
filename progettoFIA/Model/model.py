@@ -39,7 +39,7 @@ def train_model(dataset):
     # Calcolare l'accuratezza sul test set
     y_pred = calibrated_model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"🔹 Accuratezza del modello: {accuracy * 100:.2f}%")
+    print(f"Accuratezza del modello: {accuracy * 100:.2f}%")
     print(classification_report(y_test, y_pred))
 
     return calibrated_model
